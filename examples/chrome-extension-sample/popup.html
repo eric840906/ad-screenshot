@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 350px;
+      padding: 16px;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      margin: 0;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .logo {
+      font-size: 18px;
+      font-weight: bold;
+      color: #007cba;
+      margin-bottom: 4px;
+    }
+    
+    .status {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .status.connected {
+      color: #28a745;
+    }
+    
+    .status.disconnected {
+      color: #dc3545;
+    }
+    
+    .section {
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    
+    .button {
+      width: 100%;
+      padding: 10px 12px;
+      margin: 4px 0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    
+    .button:hover {
+      opacity: 0.9;
+    }
+    
+    .button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .button.primary {
+      background-color: #007cba;
+      color: white;
+    }
+    
+    .button.success {
+      background-color: #28a745;
+      color: white;
+    }
+    
+    .button.warning {
+      background-color: #ffc107;
+      color: #212529;
+    }
+    
+    .button.info {
+      background-color: #17a2b8;
+      color: white;
+    }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .stat-card {
+      background: #f8f9fa;
+      padding: 8px;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 12px;
+    }
+    
+    .stat-number {
+      font-size: 18px;
+      font-weight: bold;
+      color: #007cba;
+    }
+    
+    .result-area {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 8px;
+      margin-top: 8px;
+      font-size: 12px;
+      min-height: 40px;
+      display: none;
+    }
+    
+    .result-area.show {
+      display: block;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #eee;
+      font-size: 11px;
+      color: #666;
+    }
+    
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">Ad Automation Helper</div>
+    <div class="status" id="connection-status">Checking connection...</div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">Quick Actions</div>
+    <button class="button primary" id="highlight-ads">
+      Highlight Ad Elements
+    </button>
+    <button class="button success" id="count-ads">
+      Count Ad Elements
+    </button>
+    <button class="button warning" id="extract-data">
+      Extract Ad Data
+    </button>
+    <button class="button info" id="take-screenshot">
+      Take Screenshot
+    </button>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">Page Statistics</div>
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number" id="ad-count">-</div>
+        <div>Ad Elements</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="total-elements">-</div>
+        <div>Total Elements</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">Automation Bridge</div>
+    <button class="button info" id="check-bridge">
+      Check Connection
+    </button>
+    <button class="button primary" id="send-test-command" disabled>
+      Send Test Command
+    </button>
+  </div>
+  
+  <div class="result-area" id="result-area">
+    Results will appear here...
+  </div>
+  
+  <div class="footer">
+    Ad Screenshot Automation System v1.0.0
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

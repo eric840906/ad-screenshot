@@ -192,33 +192,75 @@ https://test-site.com,PROD002,USER002,Video,.video-ad,Desktop
 
 ## 🔖 Bookmarklet Integration
 
-The system supports custom JavaScript execution through bookmarklets:
+**Full integration with your company's AD543 bookmarklet (查廣告543)** plus built-in templates for enhanced ad detection and analysis.
+
+### 🏢 Company AD543 Integration ⭐
+
+**Your existing AD543 bookmarklet is fully integrated and ready to use:**
+
+#### CSV Configuration
+```csv
+WebsiteURL,PID,UID,AdType,Selector,DeviceUI,BookmarkletType
+https://news.example.com,PROD001,USER001,AD543,.content-area,Android,AD543
+https://media.example.com,PROD002,USER002,AD543,.main-content,iOS,AD543
+```
+
+#### Programmatic Usage
+```javascript
+const { BookmarkletExecutor } = require('./dist/index.js');
+const executor = BookmarkletExecutor.getInstance();
+
+// Execute your company's AD543 bookmarklet
+const result = await executor.executeAD543Bookmarklet(sessionId, {
+  openPanel: false,        // Don't auto-open for automation
+  waitForReady: true,      // Wait for full initialization
+  timeout: 30000           // 30-second timeout
+});
+
+// Check if AD543 panel is visible
+const isPanelVisible = await executor.isAD543PanelVisible(sessionId);
+```
+
+#### AD543 Features Integrated
+- ✅ **CSS Preloading**: `searchPanelStyle.css` & `svStyle.css` cached
+- ✅ **GM Polyfill**: Full Greasemonkey compatibility
+- ✅ **Search Panel**: Complete ad analysis interface  
+- ✅ **Mobile Support**: Works with Android/iOS emulation
+- ✅ **Error Recovery**: Network timeout handling
+- ✅ **Performance**: Session storage caching
 
 ### Built-in Templates
 
 - **Element Highlighter**: Highlight elements matching CSS selectors
-- **Ad Information Extractor**: Extract comprehensive ad data
+- **Ad Information Extractor**: Extract comprehensive ad data  
 - **Page Scanner**: Scan for various ad-related elements
+- **AD543 Company Tool**: Wrapper for your company's bookmarklet
 
 ### Usage in Data Files
 
 ```csv
-WebsiteURL,PID,UID,AdType,Selector,DeviceUI
-https://example.com,PROD001,USER001,Banner,bookmarklet:Element Highlighter:selector=.ad,Android
+WebsiteURL,PID,UID,AdType,Selector,DeviceUI,BookmarkletType
+# Company AD543 bookmarklet
+https://news.com,PROD001,USER001,AD543,.content,Android,AD543
+# Built-in bookmarklet templates  
+https://example.com,PROD002,USER002,Banner,bookmarklet:Element Highlighter:selector=.ad,iOS,
 ```
 
 ### Custom Bookmarklets
 
 ```javascript
 const { BookmarkletExecutor } = require('./dist/index.js');
-
 const executor = BookmarkletExecutor.getInstance();
 
+// Use built-in templates
 const config = executor.createConfigFromTemplate('Element Highlighter', {
   selector: '.advertisement',
-  color: '#ff0000',
+  color: '#ff0000', 
   duration: 5000
 });
+
+// Or use your company's AD543 directly
+const ad543Result = await executor.executeAD543Bookmarklet(sessionId);
 ```
 
 ## 🔌 Chrome Extension Integration

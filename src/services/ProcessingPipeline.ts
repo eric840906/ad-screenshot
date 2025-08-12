@@ -232,8 +232,11 @@ export class ProcessingPipeline {
         );
 
         // Execute bookmarklet if configured
-        if (config.processing.concurrency && jobData.record.Selector.includes('bookmarklet:')) {
+        if (jobData.record.Selector.includes('bookmarklet:')) {
           await this.executeBookmarkletForJob(sessionId, jobData.record);
+        } else if (jobData.record.BookmarkletType === 'AD543' || jobData.record.AdType === 'AD543') {
+          // Execute company AD543 bookmarklet
+          await this.executeAD543BookmarkletForJob(sessionId, jobData.record);
         }
 
         // Wait for selector
@@ -421,6 +424,204 @@ export class ProcessingPipeline {
       parameters,
       { timeout: 10000 }
     );
+  }
+
+  /**
+   * Execute company AD543 bookmarklet for job
+   */
+  private async executeAD543BookmarkletForJob(sessionId: string, record: any): Promise<void> {
+    try {
+      logger.debug('Executing AD543 advanced automation', {
+        sessionId,
+        url: record.WebsiteURL,
+        deviceUI: record.DeviceUI,
+        adType: record.AD543Type || 'outstream'
+      });
+
+      // Step 1: Execute AD543 bookmarklet to load the system
+      const result = await this.bookmarkletExecutor.executeAD543Bookmarklet(sessionId, {
+        openPanel: false,
+        waitForReady: true,
+        timeout: 30000
+      });
+
+      if (!result.success) {
+        throw new Error(`AD543 bookmarklet failed: ${result.error}`);
+      }
+
+      // Wait for AD543 to fully initialize
+      await this.delay(3000);
+
+      // Step 2: Configure AD543 based on record type
+      await this.configureAD543ForRecord(sessionId, record);
+
+      // Step 3: Execute ad injection
+      await this.executeAD543AdInjection(sessionId, record);
+
+      // Step 4: Wait for ad to load and render
+      await this.waitForAdToRender(sessionId, record);
+
+      logger.debug('AD543 automation completed successfully', {
+        sessionId,
+        adType: record.AD543Type || 'outstream'
+      });
+
+    } catch (error) {
+      logger.error('Failed to execute AD543 automation', error, {
+        sessionId,
+        url: record.WebsiteURL,
+        adType: record.AD543Type
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Configure AD543 based on record configuration
+   */
+  private async configureAD543ForRecord(sessionId: string, record: any): Promise<void> {
+    const adType = record.AD543Type || 'outstream';
+    
+    logger.debug('Configuring AD543', { sessionId, adType, record });
+
+    switch (adType.toLowerCase()) {
+      case 'outstream':
+        const outstreamResult = await this.bookmarkletExecutor.configureAD543Outstream(sessionId, {
+          source: record.AD543Source || 'staging',
+          playMode: record.AD543PlayMode || 'MIR',
+          pid: record.PID,
+          uid: record.UID,
+          selector: record.Selector || '.content-area'
+        });
+        
+        if (!outstreamResult.success) {
+          throw new Error(`Failed to configure outstream: ${outstreamResult.error}`);
+        }
+        break;
+
+      case 'instream':
+        const instreamResult = await this.bookmarkletExecutor.configureAD543Instream(sessionId, {
+          player: record.AD543Player || 'glia',
+          videoUrl: record.AD543VideoUrl || '',
+          clickUrl: record.AD543ClickUrl || ''
+        });
+        
+        if (!instreamResult.success) {
+          throw new Error(`Failed to configure instream: ${instreamResult.error}`);
+        }
+        break;
+
+      case 'dv360':
+        const dv360Result = await this.bookmarkletExecutor.configureAD543DV360(sessionId, {
+          campaignUrl: record.AD543CampaignUrl || '',
+          targetIframe: record.AD543TargetIframe || ''
+        });
+        
+        if (!dv360Result.success) {
+          throw new Error(`Failed to configure DV360: ${dv360Result.error}`);
+        }
+        break;
+
+      default:
+        logger.warn('Unknown AD543 type, using default outstream', { sessionId, adType });
+        // Fallback to outstream configuration
+        await this.bookmarkletExecutor.configureAD543Outstream(sessionId, {
+          source: 'staging',
+          playMode: 'MIR',
+          pid: record.PID,
+          uid: record.UID,
+          selector: record.Selector || '.content-area'
+        });
+    }
+  }
+
+  /**
+   * Execute AD543 ad injection (Shift+R functionality)
+   */
+  private async executeAD543AdInjection(sessionId: string, record: any): Promise<void> {
+    logger.debug('Executing AD543 ad injection', { sessionId });
+
+    const injectionResult = await this.bookmarkletExecutor.executeAD543Injection(
+      sessionId,
+      record.Selector || '.content-area'
+    );
+
+    if (!injectionResult.success) {
+      throw new Error(`Ad injection failed: ${injectionResult.error}`);
+    }
+
+    logger.debug('Ad injection completed', { sessionId });
+  }
+
+  /**
+   * Wait for injected ad to render completely
+   */
+  private async waitForAdToRender(sessionId: string, record: any): Promise<void> {
+    const adType = record.AD543Type || 'outstream';
+    const maxWaitTime = 15000; // 15 seconds
+    const checkInterval = 1000; // 1 second
+    const startTime = Date.now();
+
+    logger.debug('Waiting for ad to render', { sessionId, adType });
+
+    while (Date.now() - startTime < maxWaitTime) {
+      try {
+        const isRendered = await this.browserEngine.executeBrowserScript(sessionId, `
+          // Check for common ad indicators based on type
+          const adType = '${adType.toLowerCase()}';
+          
+          if (adType === 'outstream') {
+            // Look for OneAD containers
+            const oneadContainers = document.querySelectorAll('[id*="onead"], [class*="onead"]');
+            if (oneadContainers.length > 0) {
+              // Check if any container has actual content
+              for (const container of oneadContainers) {
+                if (container.innerHTML.trim().length > 100) {
+                  return true;
+                }
+              }
+            }
+          } else if (adType === 'instream') {
+            // Look for video players
+            const gliaPlayer = document.querySelector('.gliaplayer-container video');
+            const truvidPlayer = document.querySelector('.trv-player-container video');
+            if (gliaPlayer || truvidPlayer) {
+              return true;
+            }
+          } else if (adType === 'dv360') {
+            // Look for DV360 iframe modifications
+            const iframes = document.querySelectorAll('iframe');
+            for (const iframe of iframes) {
+              if (iframe.src && iframe.src.includes('doubleclick')) {
+                return true;
+              }
+            }
+          }
+          
+          return false;
+        `);
+
+        if (isRendered) {
+          logger.debug('Ad successfully rendered', { 
+            sessionId, 
+            adType, 
+            renderTime: Date.now() - startTime 
+          });
+          return;
+        }
+
+        await this.delay(checkInterval);
+      } catch (error) {
+        logger.warn('Error checking ad render status', error, { sessionId });
+        await this.delay(checkInterval);
+      }
+    }
+
+    logger.warn('Ad render timeout - proceeding anyway', { 
+      sessionId, 
+      adType, 
+      waitTime: Date.now() - startTime 
+    });
   }
 
   /**

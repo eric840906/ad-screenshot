@@ -1,0 +1,11 @@
+WebsiteURL,PID,UID,AdType,Selector,DeviceUI,BookmarkletType,AD543Type,AD543Source,AD543PlayMode,AD543Player,AD543VideoUrl,AD543ClickUrl,AD543CampaignUrl,AD543TargetIframe
+https://news.example.com,PROD001,USER001,AD543,.content-area,Android,AD543,outstream,staging,MIR,,,,,
+https://media.example.com,PROD002,USER002,AD543,.main-content,iOS,AD543,outstream,onevision,MFS,,,,,
+https://blog.example.com,PROD003,USER003,AD543,.article-body,Desktop,AD543,outstream,staging,Desktop,,,,,
+https://portal.example.com,PROD004,USER004,AD543,.text-content,Android,AD543,outstream,staging,TD,,,,,
+https://video.example.com,PROD005,USER005,AD543,.video-container,Android,AD543,instream,,,,glia,https://sample-videos.com/mp4/720/mp4/SampleVideo_720x480_1mb.mp4,https://example.com/ad-click,,,
+https://stream.example.com,PROD006,USER006,AD543,.player-area,iOS,AD543,instream,,,,truvid,https://sample-videos.com/mp4/720/mp4/SampleVideo_720x480_2mb.mp4,https://example.com/video-ad,,,
+https://campaign.example.com,PROD007,USER007,AD543,.dv360-target,Desktop,AD543,dv360,,,,,,,https://doubleclick.net/campaign/12345,#main-iframe
+https://test.staging.com,PROD008,USER008,AD543,.ad-slot,Android,AD543,outstream,staging,IP,,,,,
+https://demo.production.com,PROD009,USER009,AD543,.banner-zone,iOS,AD543,outstream,onevision,IR,,,,,
+https://mixed.example.com,PROD010,USER010,AD543,.content,Desktop,AD543,outstream,staging,MFS,,,,,

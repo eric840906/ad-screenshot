@@ -1,11 +1,14 @@
-WebsiteURL,PID,UID,AdType,Selector,DeviceUI
-https://example.com,PROD001,USER001,Banner,.ad-banner,Android
-https://example.com,PROD001,USER001,Banner,.ad-banner,iOS
-https://example.com,PROD001,USER001,Banner,.ad-banner,Desktop
-https://test-site.com,PROD002,USER002,Video,.video-ad,Android
-https://test-site.com,PROD002,USER002,Video,.video-ad,iOS
-https://demo.com,PROD003,USER003,Sidebar,.sidebar-ad,Desktop
-https://sample.org,PROD004,USER004,Banner,bookmarklet:Element Highlighter:selector=.advertisement,Android
-https://showcase.net,PROD005,USER005,Interstitial,.full-screen-ad,iOS
-https://preview.co,PROD006,USER006,Native,.native-ad,Desktop
-https://trial.com,PROD007,USER007,Popup,.popup-ad,Android
+WebsiteURL,PID,UID,AdType,Selector,DeviceUI,BookmarkletType
+https://example.com,PROD001,USER001,Banner,.ad-banner,Android,
+https://example.com,PROD001,USER001,Banner,.ad-banner,iOS,
+https://example.com,PROD001,USER001,Banner,.ad-banner,Desktop,
+https://test-site.com,PROD002,USER002,Video,.video-ad,Android,
+https://test-site.com,PROD002,USER002,Video,.video-ad,iOS,
+https://demo.com,PROD003,USER003,Sidebar,.sidebar-ad,Desktop,
+https://sample.org,PROD004,USER004,Banner,bookmarklet:Element Highlighter:selector=.advertisement,Android,
+https://showcase.net,PROD005,USER005,Interstitial,.full-screen-ad,iOS,
+https://preview.co,PROD006,USER006,Native,.native-ad,Desktop,
+https://trial.com,PROD007,USER007,Popup,.popup-ad,Android,
+https://news.example.com,PROD008,USER008,AD543,.content-area,Android,AD543
+https://media.example.com,PROD009,USER009,AD543,.main-content,iOS,AD543
+https://blog.example.com,PROD010,USER010,AD543,.article-body,Desktop,AD543

@@ -5,12 +5,12 @@
 import * as winston from 'winston';
 import * as path from 'path';
 import * as fs from 'fs-extra';
-import { LogEntry, ErrorContext, ErrorType } from '@/types';
+import { ErrorContext, ErrorType } from '@/types';
 import { config } from '@/config';
 
 export class LoggingService {
-  private logger: winston.Logger;
-  private errorLogger: winston.Logger;
+  private logger!: winston.Logger;
+  private errorLogger!: winston.Logger;
   private static instance: LoggingService;
 
   constructor() {
@@ -151,7 +151,7 @@ export class LoggingService {
       ...meta,
       ...(error && {
         error: {
-          message: error.message,
+          message: (error as Error).message,
           stack: error.stack,
           name: error.name,
         },

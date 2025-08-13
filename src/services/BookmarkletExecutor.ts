@@ -102,7 +102,7 @@ export class BookmarkletExecutor {
 
       return {
         success: false,
-        error: error.message,
+        error: (error as Error).message,
         executionTime,
       };
     }
@@ -335,7 +335,7 @@ export class BookmarkletExecutor {
 
       return {
         success: false,
-        error: error.message,
+        error: (error as Error).message,
         executionTime
       };
     }
@@ -462,7 +462,7 @@ export class BookmarkletExecutor {
         // Wait 500ms before checking again
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
-        logger.warn('Error checking AD543 readiness', error, { sessionId });
+        logger.warn('Error checking AD543 readiness', { error, sessionId });
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
@@ -551,7 +551,7 @@ export class BookmarkletExecutor {
     try {
       logger.debug('Configuring AD543 outstream settings', { sessionId, config });
 
-      const result = await this.browserEngine.executeBrowserScript(sessionId, `
+      await this.browserEngine.executeBrowserScript(sessionId, `
         // Wait for AD543 to be ready
         if (!window.AD543Loaded) {
           throw new Error('AD543 not loaded');
@@ -579,7 +579,7 @@ export class BookmarkletExecutor {
       return { success: true };
     } catch (error) {
       logger.error('Failed to configure AD543 outstream', error, { sessionId });
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -597,7 +597,7 @@ export class BookmarkletExecutor {
     try {
       logger.debug('Configuring AD543 instream settings', { sessionId, config });
 
-      const result = await this.browserEngine.executeBrowserScript(sessionId, `
+      await this.browserEngine.executeBrowserScript(sessionId, `
         if (!window.AD543Loaded) {
           throw new Error('AD543 not loaded');
         }
@@ -620,7 +620,7 @@ export class BookmarkletExecutor {
       return { success: true };
     } catch (error) {
       logger.error('Failed to configure AD543 instream', error, { sessionId });
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -637,7 +637,7 @@ export class BookmarkletExecutor {
     try {
       logger.debug('Configuring AD543 DV360 settings', { sessionId, config });
 
-      const result = await this.browserEngine.executeBrowserScript(sessionId, `
+      await this.browserEngine.executeBrowserScript(sessionId, `
         if (!window.AD543Loaded) {
           throw new Error('AD543 not loaded');
         }
@@ -659,7 +659,7 @@ export class BookmarkletExecutor {
       return { success: true };
     } catch (error) {
       logger.error('Failed to configure AD543 DV360', error, { sessionId });
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -673,7 +673,7 @@ export class BookmarkletExecutor {
     try {
       logger.debug('Executing AD543 ad injection', { sessionId, targetSelector });
 
-      const result = await this.browserEngine.executeBrowserScript(sessionId, `
+      await this.browserEngine.executeBrowserScript(sessionId, `
         if (!window.AD543Loaded) {
           throw new Error('AD543 not loaded');
         }
@@ -728,7 +728,7 @@ export class BookmarkletExecutor {
       return { success: true };
     } catch (error) {
       logger.error('Failed to execute AD543 injection', error, { sessionId });
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -798,7 +798,7 @@ export class BookmarkletExecutor {
       return { success: true };
     } catch (error) {
       logger.error('Failed to open AD543 panel', error, { sessionId });
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 

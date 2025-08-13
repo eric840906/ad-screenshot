@@ -3,19 +3,27 @@
  */
 
 import * as http from 'http';
-import * as WebSocket from 'ws';
+import WebSocket, { WebSocketServer } from 'ws';
 import { ChromeExtensionMessage } from '@/types';
 import { logger } from './LoggingService';
 import { config } from '@/config';
 
 export interface ExtensionCommand {
-  type: 'screenshot' | 'highlight' | 'overlay' | 'extract_data';
+  type: 'screenshot' | 'highlight' | 'overlay' | 'extract_data' | 'mobile_screenshot' | 'configure_mobile_ui';
   target?: string; // CSS selector
   data?: any;
   options?: {
     duration?: number;
     color?: string;
     position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
+    deviceType?: 'ios' | 'android';
+    time?: string;
+    url?: string;
+    saveToFile?: boolean;
+    returnAsBuffer?: boolean;
+    quality?: number;
+    format?: string;
+    includeMetadata?: boolean;
   };
 }
 
@@ -28,7 +36,7 @@ export interface ExtensionResponse {
 
 export class ChromeExtensionBridge {
   private server: http.Server | null = null;
-  private wsServer: WebSocket.Server | null = null;
+  private wsServer: WebSocketServer | null = null;
   private activeConnections: Map<string, WebSocket> = new Map();
   private messageHandlers: Map<string, (data: any) => Promise<any>> = new Map();
   private static instance: ChromeExtensionBridge;
@@ -58,7 +66,7 @@ export class ChromeExtensionBridge {
       });
 
       // Create WebSocket server for real-time communication
-      this.wsServer = new WebSocket.Server({ 
+      this.wsServer = new WebSocketServer({ 
         server: this.server,
         path: '/extension-bridge'
       });
@@ -263,6 +271,36 @@ export class ChromeExtensionBridge {
       return { acknowledged: true };
     });
 
+    // Mobile screenshot completion handler
+    this.messageHandlers.set('mobile_screenshot_complete', async (data) => {
+      logger.info('Mobile screenshot completed by extension', {
+        deviceType: data?.deviceType,
+        dataSize: data?.imageData?.length || 0
+      });
+      return { acknowledged: true, data: data?.imageData };
+    });
+
+    // Mobile UI configuration confirmation
+    this.messageHandlers.set('mobile_ui_configured', async (data) => {
+      logger.debug('Mobile UI configured by extension', { data });
+      return { acknowledged: true };
+    });
+
+    // AD543 status updates
+    this.messageHandlers.set('ad543_status', async (data) => {
+      logger.debug('AD543 status update from extension', { data });
+      return { acknowledged: true };
+    });
+
+    // AD543 injection completion
+    this.messageHandlers.set('ad543_injection_complete', async (data) => {
+      logger.info('AD543 injection completed', {
+        adElements: data?.adElements || 0,
+        hasVideo: data?.hasVideo || false
+      });
+      return { acknowledged: true };
+    });
+
     // Element highlight confirmation
     this.messageHandlers.set('element_highlighted', async (data) => {
       logger.debug('Element highlighted by extension', { data });
@@ -359,7 +397,7 @@ export class ChromeExtensionBridge {
         results.push({ 
           connectionId, 
           success: false, 
-          error: error.message 
+          error: (error as Error).message 
         });
       }
     }
@@ -407,6 +445,163 @@ export class ChromeExtensionBridge {
     };
 
     return this.sendCommandToAllConnections(command);
+  }
+
+  /**
+   * Request mobile screenshot with UI overlay from enhanced extension
+   */
+  public async requestMobileScreenshot(
+    deviceType: 'ios' | 'android' = 'ios',
+    options?: {
+      time?: string;
+      url?: string;
+      saveToFile?: boolean;
+      returnAsBuffer?: boolean;
+    }
+  ): Promise<any> {
+    const command: ExtensionCommand = {
+      type: 'mobile_screenshot',
+      options: {
+        deviceType,
+        time: options?.time,
+        url: options?.url,
+        saveToFile: options?.saveToFile || false,
+        returnAsBuffer: options?.returnAsBuffer || true,
+      },
+    };
+
+    logger.debug('Requesting mobile screenshot', {
+      deviceType,
+      options,
+      activeConnections: this.activeConnections.size
+    });
+
+    return this.sendCommandToAllConnections(command);
+  }
+
+  /**
+   * Configure mobile UI settings in extension
+   */
+  public async configureMobileUI(
+    deviceType: 'ios' | 'android',
+    options: {
+      time?: string;
+      url?: string;
+    }
+  ): Promise<any> {
+    const command: ExtensionCommand = {
+      type: 'configure_mobile_ui',
+      options: {
+        deviceType,
+        time: options.time,
+        url: options.url,
+      },
+    };
+
+    logger.debug('Configuring mobile UI', {
+      deviceType,
+      options
+    });
+
+    return this.sendCommandToAllConnections(command);
+  }
+
+  /**
+   * Trigger screenshot with AD543 integration
+   */
+  public async triggerAD543Screenshot(
+    sessionId: string,
+    deviceType: 'ios' | 'android' = 'ios',
+    options?: {
+      waitForAd?: boolean;
+      timeout?: number;
+    }
+  ): Promise<Buffer> {
+    try {
+      logger.debug('Triggering AD543 screenshot', {
+        sessionId,
+        deviceType,
+        options
+      });
+
+      // Configure mobile UI first
+      await this.configureMobileUI(deviceType, {
+        time: new Date().toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      });
+
+      // Wait for configuration to apply
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Wait for ad to render if requested
+      if (options?.waitForAd) {
+        await this.waitForAdToRender(sessionId, options.timeout || 10000);
+      }
+
+      // Capture mobile screenshot
+      const result = await this.requestMobileScreenshot(deviceType, {
+        returnAsBuffer: true
+      });
+
+      // Extract base64 data from response
+      if (result.results && result.results.length > 0) {
+        const response = result.results[0];
+        if (response.success && response.data) {
+          // Convert base64 to buffer
+          return Buffer.from(response.data, 'base64');
+        }
+      }
+
+      throw new Error('Failed to capture mobile screenshot');
+    } catch (error) {
+      logger.error('AD543 screenshot failed', error, { sessionId, deviceType });
+      throw error;
+    }
+  }
+
+  /**
+   * Wait for ad content to render
+   */
+  private async waitForAdToRender(sessionId: string, timeout: number = 10000): Promise<void> {
+    const startTime = Date.now();
+    const checkInterval = 1000;
+
+    while (Date.now() - startTime < timeout) {
+      try {
+        // Use extract_data command to check for ad elements
+        const adCheck = await this.extractData([
+          '[id*="onead"]',
+          '[class*="onead"]',
+          '.gliaplayer-container video',
+          '.trv-player-container video',
+          'iframe[src*="doubleclick"]'
+        ]);
+
+        if (adCheck.results && adCheck.results.length > 0) {
+          const response = adCheck.results[0];
+          if (response.success && response.data?.elements?.length > 0) {
+            logger.debug('Ad content detected, proceeding with screenshot', {
+              sessionId,
+              adElements: response.data.elements.length
+            });
+            return;
+          }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+      } catch (error) {
+        logger.warn('Error checking for ad content', { error, sessionId });
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+      }
+    }
+
+    logger.warn('Ad content not detected within timeout, proceeding anyway', {
+      sessionId,
+      timeout
+    });
   }
 
   /**
@@ -514,7 +709,7 @@ export class ChromeExtensionBridge {
    */
   public async close(): Promise<void> {
     // Close all WebSocket connections
-    for (const [connectionId, connection] of this.activeConnections) {
+    for (const [_connectionId, connection] of this.activeConnections) {
       connection.close();
     }
     this.activeConnections.clear();

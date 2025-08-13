@@ -1,0 +1,4 @@
+WebsiteURL,PID,UID,AdType,Selector,DeviceUI,BookmarkletType,AD543Type,AD543Source,AD543PlayMode,AD543Player,AD543VideoUrl,AD543ClickUrl,AD543CampaignUrl,AD543TargetIframe
+https://https://staging-occ.onead.tw/api/v1/packs/10991/preview?pid=1432502&tracking=1,1432239,1000135,AD543,#onead-ir-tag00,iOS,AD543,outstream,staging,MIR,,,,,
+https://https://staging-occ.onead.tw/api/v1/packs/10991/preview?pid=1432502&tracking=1,1422575,1000135,AD543,body,iOS,AD543,outstream,staging,MFS,,,,,
+https://https://staging-occ.onead.tw/api/v1/packs/10991/preview?pid=1432502&tracking=1,1434432,1000135,AD543,body,Desktop,AD543,outstream,staging,ㄇ簾,,,,,

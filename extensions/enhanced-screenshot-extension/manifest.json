@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "AD543 Screenshot & Filter Tool - Enhanced",
+  "version": "2.0",
+  "description": "Enhanced screenshot tool with AD543 automation integration - mobile UI overlays with batch processing support",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs",
+    "desktopCapture",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.google.com/",
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "48": "icon.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["*.svg", "*.css", "*.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

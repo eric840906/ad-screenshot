@@ -4,8 +4,8 @@
 
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as moment from 'moment';
-import { StorageOptions, AdRecord } from '@/types';
+import moment from 'moment';
+import { AdRecord } from '@/types';
 import { logger } from './LoggingService';
 import { config } from '@/config';
 
@@ -436,7 +436,7 @@ export class FileStorageService {
               result.deletedFiles++;
               result.freedSpace += file.size;
             } catch (error) {
-              result.errors.push(`Failed to delete ${file.filePath}: ${error.message}`);
+              result.errors.push(`Failed to delete ${file.filePath}: ${(error as Error).message}`);
             }
           }
         }
@@ -597,7 +597,7 @@ export class FileStorageService {
     try {
       // Note: This is a simplified implementation
       // In production, you'd use a library like 'check-disk-space'
-      const stats = await fs.stat(this.baseDirectory);
+      await fs.stat(this.baseDirectory); // Check if directory exists
       
       // Placeholder values - replace with actual disk space check
       return {

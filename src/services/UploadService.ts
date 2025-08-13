@@ -5,8 +5,8 @@
 import { google } from 'googleapis';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as moment from 'moment';
-import { UploadResult, GoogleDriveConfig, AdRecord } from '@/types';
+import moment from 'moment';
+import { UploadResult, AdRecord } from '@/types';
 import { logger } from './LoggingService';
 import { config } from '@/config';
 
@@ -168,13 +168,13 @@ export class UploadService {
       const duration = Date.now() - startTime;
 
       logger.logUpload(false, path.basename(filePath), 'gdrive', {
-        error: error.message,
+        error: (error as Error).message,
         duration,
       });
 
       return {
         success: false,
-        error: error.message,
+        error: (error as Error).message,
       };
     }
   }
@@ -315,7 +315,7 @@ export class UploadService {
 
       logger.debug('File made public', { fileId });
     } catch (error) {
-      logger.warn('Failed to make file public', { fileId, error: error.message });
+      logger.warn('Failed to make file public', { fileId, error: (error as Error).message });
     }
   }
 
@@ -347,7 +347,7 @@ export class UploadService {
         } catch (error) {
           return {
             success: false,
-            error: error.message,
+            error: (error as Error).message,
           };
         }
       });
@@ -632,7 +632,7 @@ export class UploadService {
             age: moment().diff(moment(file.createdTime), 'days'),
           });
         } catch (error) {
-          result.errors.push(`Failed to delete ${file.name}: ${error.message}`);
+          result.errors.push(`Failed to delete ${file.name}: ${(error as Error).message}`);
         }
       }
 
@@ -645,7 +645,7 @@ export class UploadService {
       return result;
     } catch (error) {
       logger.error('Google Drive cleanup failed', error);
-      return { deletedCount: 0, errors: [error.message] };
+      return { deletedCount: 0, errors: [(error as Error).message] };
     }
   }
 }

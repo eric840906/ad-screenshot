@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="main.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500&display=swap" rel="stylesheet">
+  <script src="./html2canvas.min.js"></script>
+  <title>Document</title>
+</head>
+<body>
+  <div class="btn-container">
+    <div class="capture-row">
+      <button id="capture-btn">
+        <img src="./UI/camera.svg" alt="">
+      </button>
+    </div>
+    <div class="switch-row">
+      <img src="./UI/smartphone.svg" class="device-img" alt="">
+        <label class="switch">
+          <input type="checkbox" id="switch-btn">
+          <span class="slider round"></span>
+        </label>
+        <img src="./UI/computer.svg" class="device-img" alt="">
+    </div>
+  </div>
+  <div id="smartphone-setting" class="smartphone-container">
+    <div>
+      <h3>Setting</h3>
+      <div id="input-ui" class="flex-r">
+        <select name="system" id="system-selection">
+          <option value="ios">iOS</option>
+          <option value="android">android</option>
+        </select>
+        <input type="time" name="time" id="ui-time" value="09:00">
+      </div>
+    </div>
+    <br>
+    <div id="ui-container">
+      <div id="ios-ui">
+        <p>Status Bar</p>
+        <div class="status-bar">
+          <div class="upper-status">
+            <span class="system-time">00:00</span>
+            <div class="ios-ui-group flex-r">
+              <img src="./iOSIcons/connection.svg" alt="">
+              <img src="./iOSIcons/wifi.svg" alt="">
+              <img src="./iOSIcons/battery.svg" alt="">
+            </div>
+          </div>
+          <div class="bottom-status url-text">
+          </div>
+        </div>
+        <p>Nav Bar</p>
+        <div class="nav-bar">
+          <div></div>
+        </div>
+      </div>
+      <div id="android-ui">
+        <p>Status Bar</p>
+        <div class="status-bar">
+          <div class="upper-status">
+            <span class="system-time">00:00</span>
+            <div class="ios-ui-group flex-r">
+              <img src="./androidIcons/wifi.svg" alt="">
+              <img src="./androidIcons/connection.svg" alt="">
+              <img src="./androidIcons/battery.svg" alt="">
+            </div>
+          </div>
+          <div class="bottom-status flex-r">
+            <img src="./androidIcons/home.svg" alt="">
+            <div class="android-url-box flex-r">
+              <img src="androidIcons/lock.svg" alt="">
+              <div class="url-text"></div>
+            </div>
+            <img src="androidIcons/tabs.svg" alt="">
+            <img src="androidIcons/more.svg" alt="">
+          </div>
+        </div>
+        <p>Nav Bar</p>
+        <div class="nav-bar">
+          <div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

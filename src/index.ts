@@ -3,10 +3,9 @@
  */
 
 import { ProcessingPipeline } from './services/ProcessingPipeline';
-import { DataIngestionService, DataSource } from './services/DataIngestionService';
+import { DataSource } from './services/DataIngestionService';
 import { logger } from './services/LoggingService';
 import { config, validateConfig } from './config';
-import { errorHandler } from './utils/ErrorHandler';
 import * as process from 'process';
 
 export interface AutomationSystemOptions {
@@ -24,6 +23,13 @@ export class AdScreenshotAutomationSystem {
   constructor() {
     this.pipeline = ProcessingPipeline.getInstance();
     this.setupShutdownHandlers();
+  }
+
+  /**
+   * Get the processing pipeline instance
+   */
+  public get processingPipeline(): ProcessingPipeline {
+    return this.pipeline;
   }
 
   /**
@@ -211,7 +217,7 @@ Status:
 
     if (options.command === 'health') {
       await system.initialize();
-      const health = await system.pipeline.healthCheck();
+      const health = await system.processingPipeline.healthCheck();
       console.log('System Health:', JSON.stringify(health, null, 2));
       await system.shutdown();
       return;
@@ -241,7 +247,7 @@ Status:
 
     await system.shutdown();
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Error:', (error as Error).message);
     process.exit(1);
   }
 }

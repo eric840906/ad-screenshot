@@ -3,7 +3,7 @@
  */
 
 import * as fs from 'fs-extra';
-import * as csvParser from 'csv-parser';
+import csvParser from 'csv-parser';
 import { google } from 'googleapis';
 import { AdRecord, DeviceType } from '@/types';
 import { logger } from './LoggingService';
@@ -110,13 +110,13 @@ export class DataIngestionService {
 
       fs.createReadStream(filePath)
         .pipe(csvParser())
-        .on('data', (data) => results.push(data))
+        .on('data', (data: any) => results.push(data))
         .on('end', () => {
           logger.debug(`Parsed ${results.length} rows from CSV file: ${filePath}`);
           resolve(results);
         })
-        .on('error', (error) => {
-          logger.error('CSV parsing error', error, { filePath });
+        .on('error', (error: any) => {
+          logger.error('CSV parsing error', { error, filePath });
           reject(error);
         });
     });

@@ -4,12 +4,12 @@
 
 import { 
   AdRecord, 
-  ProcessingJob, 
   BatchProcessingResult, 
   JobPriority,
   DeviceType,
   ScreenshotResult,
-  BookmarkletConfig
+  BookmarkletConfig,
+  ErrorType
 } from '@/types';
 import { DataIngestionService } from './DataIngestionService';
 import { QueueManager } from './QueueManager';
@@ -17,12 +17,11 @@ import { BrowserAutomationEngine } from './BrowserAutomationEngine';
 import { BookmarkletExecutor } from './BookmarkletExecutor';
 import { ChromeExtensionBridge } from './ChromeExtensionBridge';
 import { ScreenshotManager } from './ScreenshotManager';
-import { FileStorageService } from './FileStorageService';
+// import { FileStorageService } from './FileStorageService';
 import { UploadService } from './UploadService';
 import { logger } from './LoggingService';
-import { errorHandler, AppError, ErrorType } from '@/utils/ErrorHandler';
+import { errorHandler } from '@/utils/ErrorHandler';
 import { config } from '@/config';
-import * as pLimit from 'p-limit';
 
 export interface PipelineOptions {
   concurrency?: number;
@@ -43,16 +42,16 @@ export interface ProcessingResult {
 }
 
 export class ProcessingPipeline {
-  private dataIngestion: DataIngestionService;
-  private queueManager: QueueManager;
-  private browserEngine: BrowserAutomationEngine;
-  private bookmarkletExecutor: BookmarkletExecutor;
-  private extensionBridge: ChromeExtensionBridge;
-  private screenshotManager: ScreenshotManager;
-  private fileStorage: FileStorageService;
-  private uploadService: UploadService;
-  private isRunning: boolean = false;
-  private activeJobs: Map<string, ProcessingJob> = new Map();
+  private dataIngestion!: DataIngestionService;
+  private queueManager!: QueueManager;
+  private browserEngine!: BrowserAutomationEngine;
+  private bookmarkletExecutor!: BookmarkletExecutor;
+  private extensionBridge!: ChromeExtensionBridge;
+  private screenshotManager!: ScreenshotManager;
+  // private _fileStorage!: FileStorageService;
+  private uploadService!: UploadService;
+  // private _isRunning: boolean = false;
+  // private _activeJobs: Map<string, ProcessingJob> = new Map();
   private static instance: ProcessingPipeline;
 
   constructor() {
@@ -79,7 +78,7 @@ export class ProcessingPipeline {
     this.bookmarkletExecutor = BookmarkletExecutor.getInstance();
     this.extensionBridge = ChromeExtensionBridge.getInstance();
     this.screenshotManager = ScreenshotManager.getInstance();
-    this.fileStorage = FileStorageService.getInstance();
+    // this._fileStorage = FileStorageService.getInstance();
     this.uploadService = UploadService.getInstance();
 
     logger.info('Processing pipeline initialized');
@@ -218,7 +217,7 @@ export class ProcessingPipeline {
       logger.logJobStart(jobData.id, jobData.record.WebsiteURL, jobData.record.DeviceUI);
 
       // Create browser session
-      const session = await this.browserEngine.createSession(
+      await this.browserEngine.createSession(
         jobData.record.DeviceUI,
         sessionId
       );
@@ -249,11 +248,48 @@ export class ProcessingPipeline {
         // Add delay before screenshot
         await this.delay(config.processing.screenshotDelay);
 
-        // Take screenshot
-        const screenshotBuffer = await this.browserEngine.takeScreenshot(
-          sessionId,
-          { selector: jobData.record.Selector }
-        );
+        // Take screenshot with mobile UI overlay if device is mobile
+        let screenshotBuffer: Buffer;
+        
+        if (jobData.record.DeviceUI === 'Android' || jobData.record.DeviceUI === 'iOS') {
+          // Use enhanced Chrome extension for mobile screenshot with UI overlay
+          const deviceType = jobData.record.DeviceUI.toLowerCase() as 'ios' | 'android';
+          
+          try {
+            screenshotBuffer = await this.extensionBridge.triggerAD543Screenshot(
+              sessionId,
+              deviceType,
+              {
+                waitForAd: true,
+                timeout: 15000
+              }
+            );
+            
+            logger.debug('Mobile screenshot with UI overlay captured', {
+              sessionId,
+              deviceType,
+              bufferSize: screenshotBuffer.length
+            });
+          } catch (error) {
+            logger.warn('Mobile screenshot failed, falling back to standard screenshot', {
+              error,
+              sessionId,
+              deviceType
+            });
+            
+            // Fallback to standard screenshot
+            screenshotBuffer = await this.browserEngine.takeScreenshot(
+              sessionId,
+              { selector: jobData.record.Selector }
+            );
+          }
+        } else {
+          // Desktop screenshot - use standard browser engine
+          screenshotBuffer = await this.browserEngine.takeScreenshot(
+            sessionId,
+            { selector: jobData.record.Selector }
+          );
+        }
 
         // Process and save screenshot
         const screenshotResult = await this.screenshotManager.processAndSave(
@@ -298,7 +334,7 @@ export class ProcessingPipeline {
       
       logger.logJobError(
         jobData.id,
-        this.categorizeJobError(error),
+        this.categorizeJobError(error as Error),
         error as Error,
         {
           jobId: jobData.id,
@@ -612,7 +648,7 @@ export class ProcessingPipeline {
 
         await this.delay(checkInterval);
       } catch (error) {
-        logger.warn('Error checking ad render status', error, { sessionId });
+        logger.warn('Error checking ad render status', { error, sessionId });
         await this.delay(checkInterval);
       }
     }
@@ -686,7 +722,7 @@ export class ProcessingPipeline {
    */
   public async processSingle(
     record: AdRecord,
-    options: PipelineOptions = {}
+    _options: PipelineOptions = {}
   ): Promise<ProcessingResult> {
     const jobData = {
       id: `single_${Date.now()}`,
@@ -728,7 +764,7 @@ export class ProcessingPipeline {
    */
   public async pause(): Promise<void> {
     await this.queueManager.pauseAllQueues();
-    this.isRunning = false;
+    // this._isRunning = false;
     logger.info('Processing pipeline paused');
   }
 
@@ -737,7 +773,7 @@ export class ProcessingPipeline {
    */
   public async resume(): Promise<void> {
     await this.queueManager.resumeAllQueues();
-    this.isRunning = true;
+    // this._isRunning = true;
     logger.info('Processing pipeline resumed');
   }
 

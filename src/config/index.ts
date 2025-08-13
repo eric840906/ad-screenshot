@@ -16,13 +16,14 @@ const configSchema = Joi.object({
   // Redis Configuration
   REDIS_HOST: Joi.string().default('localhost'),
   REDIS_PORT: Joi.number().default(6379),
-  REDIS_PASSWORD: Joi.string().optional(),
+  REDIS_PASSWORD: Joi.string().allow('').optional(),
   REDIS_DB: Joi.number().default(0),
   
   // Browser Configuration
   BROWSER_HEADLESS: Joi.boolean().default(true),
   BROWSER_TIMEOUT: Joi.number().default(30000),
   SCREENSHOT_TIMEOUT: Joi.number().default(10000),
+  CHROME_EXECUTABLE_PATH: Joi.string().allow('').optional(),
   
   // Processing Configuration
   CONCURRENT_JOBS: Joi.number().default(3),
@@ -34,8 +35,8 @@ const configSchema = Joi.object({
   CREATE_DATE_FOLDERS: Joi.boolean().default(true),
   
   // Google Drive Configuration
-  GOOGLE_DRIVE_KEY_FILE: Joi.string().optional(),
-  GOOGLE_DRIVE_PARENT_FOLDER: Joi.string().optional(),
+  GOOGLE_DRIVE_KEY_FILE: Joi.string().allow('').optional(),
+  GOOGLE_DRIVE_PARENT_FOLDER: Joi.string().allow('').optional(),
   ENABLE_DRIVE_UPLOAD: Joi.boolean().default(false),
   
   // Logging Configuration
@@ -43,14 +44,17 @@ const configSchema = Joi.object({
   LOG_FILE_PATH: Joi.string().default('./logs'),
   
   // Chrome Extension Configuration
-  EXTENSION_ID: Joi.string().optional(),
+  EXTENSION_ID: Joi.string().allow('').optional(),
   EXTENSION_PORT: Joi.number().default(9222),
 });
 
-const { error, value: envVars } = configSchema.validate(process.env);
+const { error, value: envVars } = configSchema.validate(process.env, {
+  allowUnknown: true,
+  stripUnknown: true,
+});
 
 if (error) {
-  throw new Error(`Config validation error: ${error.message}`);
+  throw new Error(`Config validation error: ${(error as Error).message}`);
 }
 
 /**
@@ -141,7 +145,7 @@ export const config = {
   redis: {
     host: envVars.REDIS_HOST,
     port: envVars.REDIS_PORT,
-    password: envVars.REDIS_PASSWORD,
+    password: envVars.REDIS_PASSWORD || undefined,
     db: envVars.REDIS_DB,
   },
   
@@ -149,6 +153,7 @@ export const config = {
     headless: envVars.BROWSER_HEADLESS,
     timeout: envVars.BROWSER_TIMEOUT,
     screenshotTimeout: envVars.SCREENSHOT_TIMEOUT,
+    executablePath: envVars.CHROME_EXECUTABLE_PATH || undefined,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -160,6 +165,13 @@ export const config = {
       '--disable-background-timer-throttling',
       '--disable-backgrounding-occluded-windows',
       '--disable-renderer-backgrounding',
+      '--disable-cloud-management-enrollment',
+      '--disable-component-cloud-policy',
+      '--disable-default-apps',
+      '--disable-extensions',
+      '--disable-sync',
+      '--disable-web-security',
+      '--allow-running-insecure-content',
     ],
   },
   

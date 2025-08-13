@@ -3,7 +3,7 @@
  */
 
 import * as puppeteer from 'puppeteer';
-import { BrowserSession, DeviceProfile, ErrorType, ScreenshotResult } from '@/types';
+import { BrowserSession } from '@/types';
 import { logger } from './LoggingService';
 import { config, getDeviceProfile } from '@/config';
 
@@ -59,6 +59,7 @@ export class BrowserAutomationEngine {
         args: config.browser.args,
         defaultViewport: null,
         devtools: !config.browser.headless && config.env === 'development',
+        executablePath: config.browser.executablePath,
       });
 
       logger.info('Browser automation engine initialized', {
@@ -352,8 +353,8 @@ export class BrowserAutomationEngine {
 
     try {
       // Inject parameters into global scope
-      await session.page.evaluate((params) => {
-        (window as any).__bookmarkletParams = params;
+      await session.page.evaluate((params: any) => {
+        (globalThis as any).__bookmarkletParams = params;
       }, parameters);
 
       // Execute bookmarklet code
@@ -526,5 +527,45 @@ export class BrowserAutomationEngine {
    */
   public getActiveSessions(): BrowserSession[] {
     return Array.from(this.sessions.values()).filter(session => session.isActive);
+  }
+
+  /**
+   * Execute browser script with parameters
+   */
+  public async executeBrowserScript(
+    sessionId: string,
+    script: string,
+    parameters: Record<string, any> = {}
+  ): Promise<any> {
+    const session = this.sessions.get(sessionId);
+    if (!session || !session.isActive) {
+      throw new Error(`Session ${sessionId} not found or inactive`);
+    }
+
+    try {
+      // Inject parameters into page context
+      await session.page.evaluate((params: any) => {
+        (globalThis as any).__scriptParams = params;
+      }, parameters);
+
+      // Execute the script
+      const result = await session.page.evaluate(script);
+      
+      session.lastActivity = new Date();
+
+      logger.debug('Browser script executed', {
+        sessionId,
+        scriptLength: script.length,
+        parametersCount: Object.keys(parameters).length,
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Browser script execution failed', error, { 
+        sessionId, 
+        script: script.substring(0, 100) 
+      });
+      throw error;
+    }
   }
 }

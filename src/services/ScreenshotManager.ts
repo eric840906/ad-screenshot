@@ -2,11 +2,11 @@
  * Screenshot management service with Sharp for image processing
  */
 
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 import * as path from 'path';
 import * as fs from 'fs-extra';
-import * as moment from 'moment';
-import { ScreenshotResult, AdRecord, DeviceType } from '@/types';
+import moment from 'moment';
+import { ScreenshotResult, AdRecord } from '@/types';
 import { logger } from './LoggingService';
 import { config } from '@/config';
 
@@ -130,14 +130,14 @@ export class ScreenshotManager {
         record.WebsiteURL,
         record.Selector,
         {
-          error: error.message,
+          error: (error as Error).message,
           processingTime: duration,
         }
       );
 
       return {
         success: false,
-        error: error.message,
+        error: (error as Error).message,
         metadata: {
           timestamp: new Date(),
           deviceType: record.DeviceUI,
@@ -433,7 +433,7 @@ export class ScreenshotManager {
 
         results.push({
           success: false,
-          error: error.message,
+          error: (error as Error).message,
           metadata: {
             timestamp: new Date(),
             deviceType: screenshot.record.DeviceUI,

@@ -2,8 +2,8 @@
  * Queue management service using Bull Queue and Redis
  */
 
-import * as Bull from 'bull';
-import { ProcessingJob, QueueJobData, JobPriority, AdRecord } from '@/types';
+import Bull from 'bull';
+import { QueueJobData, JobPriority, AdRecord } from '@/types';
 import { logger } from './LoggingService';
 import { config } from '@/config';
 
@@ -25,9 +25,9 @@ export interface JobResult {
 }
 
 export class QueueManager {
-  private screenshotQueue: Bull.Queue<QueueJobData>;
-  private uploadQueue: Bull.Queue<{ filePath: string; fileName: string; metadata: any }>;
-  private retryQueue: Bull.Queue<QueueJobData>;
+  private screenshotQueue!: Bull.Queue<QueueJobData>;
+  private uploadQueue!: Bull.Queue<{ filePath: string; fileName: string; metadata: any }>;
+  private retryQueue!: Bull.Queue<QueueJobData>;
   private static instance: QueueManager;
 
   constructor() {
@@ -54,10 +54,9 @@ export class QueueManager {
       port: config.redis.port,
       password: config.redis.password,
       db: config.redis.db,
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: null,
       retryDelayOnFailover: 100,
       enableReadyCheck: false,
-      maxRetriesPerRequest: null,
     };
 
     // Main screenshot processing queue
@@ -115,7 +114,7 @@ export class QueueManager {
   private setupEventHandlers(): void {
     // Screenshot queue events
     this.screenshotQueue.on('completed', (job, result) => {
-      logger.logQueueEvent('job_completed', job.id, {
+      logger.logQueueEvent('job_completed', String(job.id), {
         queue: 'screenshot-processing',
         duration: Date.now() - job.timestamp,
         result,
@@ -123,7 +122,7 @@ export class QueueManager {
     });
 
     this.screenshotQueue.on('failed', (job, err) => {
-      logger.logQueueEvent('job_failed', job.id, {
+      logger.logQueueEvent('job_failed', String(job.id), {
         queue: 'screenshot-processing',
         error: err.message,
         attempts: job.attemptsMade,
@@ -132,7 +131,7 @@ export class QueueManager {
     });
 
     this.screenshotQueue.on('stalled', (job) => {
-      logger.logQueueEvent('job_stalled', job.id, {
+      logger.logQueueEvent('job_stalled', String(job.id), {
         queue: 'screenshot-processing',
         data: job.data,
       });
@@ -140,14 +139,14 @@ export class QueueManager {
 
     // Upload queue events
     this.uploadQueue.on('completed', (job, result) => {
-      logger.logQueueEvent('job_completed', job.id, {
+      logger.logQueueEvent('job_completed', String(job.id), {
         queue: 'file-upload',
         result,
       });
     });
 
     this.uploadQueue.on('failed', (job, err) => {
-      logger.logQueueEvent('job_failed', job.id, {
+      logger.logQueueEvent('job_failed', String(job.id), {
         queue: 'file-upload',
         error: err.message,
         attempts: job.attemptsMade,
@@ -156,14 +155,14 @@ export class QueueManager {
 
     // Retry queue events
     this.retryQueue.on('completed', (job, result) => {
-      logger.logQueueEvent('job_completed', job.id, {
+      logger.logQueueEvent('job_completed', String(job.id), {
         queue: 'retry-processing',
         result,
       });
     });
 
     this.retryQueue.on('failed', (job, err) => {
-      logger.logQueueEvent('job_failed', job.id, {
+      logger.logQueueEvent('job_failed', String(job.id), {
         queue: 'retry-processing',
         error: err.message,
         finalAttempt: true,
@@ -200,7 +199,7 @@ export class QueueManager {
       jobId: jobData.id,
     });
 
-    logger.logQueueEvent('job_added', job.id, {
+    logger.logQueueEvent('job_added', String(job.id), {
       queue: 'screenshot-processing',
       batchId,
       priority,
@@ -267,7 +266,7 @@ export class QueueManager {
       { priority }
     );
 
-    logger.logQueueEvent('job_added', job.id, {
+    logger.logQueueEvent('job_added', String(job.id), {
       queue: 'file-upload',
       fileName,
       priority,
@@ -297,7 +296,7 @@ export class QueueManager {
 
     logger.info('Job moved to retry queue', {
       originalJobId: jobData.id,
-      retryJobId: job.id,
+      retryJobId: String(job.id),
       retryCount: retryData.retryCount,
       delay,
     });
@@ -336,7 +335,7 @@ export class QueueManager {
       queue.getCompleted(),
       queue.getFailed(),
       queue.getDelayed(),
-      queue.getPaused(),
+      Promise.resolve([]), // Bull doesn't have getPaused method
     ]);
 
     return {
@@ -411,7 +410,7 @@ export class QueueManager {
         await job.retry();
         retryCount++;
       } catch (error) {
-        logger.warn('Failed to retry job', { jobId: job.id, error: error.message });
+        logger.warn('Failed to retry job', { jobId: String(job.id), error: (error as Error).message });
       }
     }
 

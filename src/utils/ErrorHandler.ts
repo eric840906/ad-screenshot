@@ -2,7 +2,7 @@
  * Comprehensive error handling and retry mechanisms
  */
 
-import { ErrorType, ErrorContext, RetryStrategy } from '@/types';
+import { ErrorType, ErrorContext } from '@/types';
 import { logger } from '@/services/LoggingService';
 import { config } from '@/config';
 
@@ -192,7 +192,7 @@ export class ErrorHandler {
       logger.error('Critical error occurred', error, fullContext);
     } else if (this.isRetryableError(error)) {
       logger.warn('Retryable error occurred', {
-        error: error.message,
+        error: (error as Error).message,
         type: errorType,
         context: fullContext,
       });
@@ -212,7 +212,7 @@ export class ErrorHandler {
       return error.type;
     }
 
-    const message = error.message.toLowerCase();
+    const message = (error as Error).message.toLowerCase();
 
     // Network errors
     if (this.isNetworkError(error)) {
@@ -257,7 +257,7 @@ export class ErrorHandler {
    * Check if error is network-related
    */
   private isNetworkError(error: Error): boolean {
-    const message = error.message.toLowerCase();
+    const message = (error as Error).message.toLowerCase();
     const networkKeywords = [
       'network', 'connection', 'timeout', 'econnreset', 'enotfound',
       'econnrefused', 'socket', 'dns', 'fetch', 'request failed'
@@ -270,7 +270,7 @@ export class ErrorHandler {
    * Check if error is timeout-related
    */
   private isTimeoutError(error: Error): boolean {
-    const message = error.message.toLowerCase();
+    const message = (error as Error).message.toLowerCase();
     return message.includes('timeout') || message.includes('timed out') || 
            message.includes('deadline exceeded') || error.name === 'TimeoutError';
   }
@@ -279,7 +279,7 @@ export class ErrorHandler {
    * Check if error is user-related (not retryable)
    */
   private isUserError(error: Error): boolean {
-    const message = error.message.toLowerCase();
+    const message = (error as Error).message.toLowerCase();
     const userErrorKeywords = [
       'validation', 'invalid', 'bad request', 'unauthorized', 
       'forbidden', 'not found', 'conflict'
@@ -303,7 +303,7 @@ export class ErrorHandler {
    * Handle specific error types with custom logic
    */
   private handleSpecificError(
-    error: Error,
+    _error: Error,
     errorType: ErrorType,
     context: ErrorContext
   ): void {
@@ -488,7 +488,7 @@ export const errorHandler = ErrorHandler.getInstance();
  * Decorator for automatic error handling
  */
 export function HandleErrors(errorContext?: Partial<ErrorContext>) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (_target: any, _propertyName: string, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
     descriptor.value = async function (...args: any[]) {
@@ -506,7 +506,7 @@ export function HandleErrors(errorContext?: Partial<ErrorContext>) {
  * Decorator for automatic retry logic
  */
 export function Retry(options: RetryOptions = {}) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (_target: any, _propertyName: string, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
     descriptor.value = async function (...args: any[]) {
